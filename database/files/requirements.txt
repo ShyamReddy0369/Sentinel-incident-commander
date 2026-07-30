@@ -1,0 +1,10 @@
+# Phase 0 -- core (install these first)
+Flask==3.0.3
+python-dotenv==1.0.1
+
+oracledb==4.0.2           # Phase 1: Oracle DB driver (Thin mode -- no client install needed)
+
+# Added as we build later phases -- uncomment when we get there
+# apscheduler==3.10.4    # Phase 2: chaos engine scheduling
+# anthropic==0.34.2      # Phase 4: agent reasoning via Claude API
+# streamlit==1.38.0      # Phase 6: ops dashboard
