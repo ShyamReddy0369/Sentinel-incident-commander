@@ -1,28 +1,43 @@
-"""Service registration utilities for the chaos engine."""
+"""
+Defines the simulated production services.
+"""
 
-from __future__ import annotations
-
-from typing import Dict, List, Optional
+from dataclasses import dataclass
 
 
-class ServiceRegistry:
-    """Track simulated services and their state."""
+@dataclass
+class Service:
+    """Represents a simulated microservice."""
 
-    def __init__(self) -> None:
-        self._services: Dict[str, Dict[str, object]] = {}
+    name: str
+    owner: str
+    criticality: str
 
-    def register(self, name: str, metadata: Optional[Dict[str, object]] = None) -> None:
-        self._services[name] = {"name": name, **(metadata or {})}
 
-    def get_service(self, name: str) -> Optional[Dict[str, object]]:
-        return self._services.get(name)
-
-    def list_services(self) -> List[str]:
-        return list(self._services.keys())
-
-    def heartbeat(self, name: str) -> Dict[str, object]:
-        service = self.get_service(name)
-        if service is None:
-            raise KeyError(f"Unknown service: {name}")
-        service["last_heartbeat"] = "ok"
-        return service
+SERVICES = [
+    Service(
+        name="Authentication Service",
+        owner="Identity Team",
+        criticality="HIGH",
+    ),
+    Service(
+        name="Payment Service",
+        owner="Finance Team",
+        criticality="CRITICAL",
+    ),
+    Service(
+        name="Inventory Service",
+        owner="Commerce Team",
+        criticality="HIGH",
+    ),
+    Service(
+        name="Notification Service",
+        owner="Platform Team",
+        criticality="MEDIUM",
+    ),
+    Service(
+        name="Recommendation Service",
+        owner="AI Team",
+        criticality="MEDIUM",
+    ),
+]
