@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import random
 
-from chaos_engine.models import ServiceMetrics
+from backend.chaos_engine.models import ServiceMetrics
 
 
 class TelemetryGenerator:
