@@ -1,7 +1,15 @@
-"""Chaos engine package exports."""
+"""
+Chaos Engine package.
 
-from .health import HealthMonitor
-from .metrics import MetricsCollector
-from .telemetry import TelemetryCollector
+This package contains all components required to simulate
+a production infrastructure for Sentinel AI Ops.
+"""
 
-__all__ = ["HealthMonitor", "MetricsCollector", "TelemetryCollector"]
+from .models import ServiceMetrics, ServiceState
+from .telemetry import TelemetryGenerator
+
+__all__ = [
+    "ServiceMetrics",
+    "ServiceState",
+    "TelemetryGenerator",
+]
