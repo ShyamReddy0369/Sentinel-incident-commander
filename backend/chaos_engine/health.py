@@ -1,23 +1,27 @@
-"""Health monitoring helpers for the chaos engine."""
+"""
+Health evaluation engine for Sentinel AI Ops.
+"""
 
-from __future__ import annotations
-
-from typing import Any, Dict, Optional
-
-from .metrics import MetricsCollector
-from .utils import utcnow
+from backend.chaos_engine.models import ServiceMetrics
 
 
-class HealthMonitor:
-    """Assess service health using recent metrics and telemetry context."""
+class HealthEngine:
+    def evaluate(self, metrics: ServiceMetrics) -> str:
 
-    def __init__(self, metrics: Optional[MetricsCollector] = None) -> None:
-        self.metrics = metrics or MetricsCollector()
+        if (
+            metrics.cpu_usage >= 95
+            or metrics.memory_usage >= 95
+            or metrics.error_rate >= 10
+            or metrics.latency_ms >= 800
+        ):
+            return "CRITICAL"
 
-    def check(self, service_name: str, details: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        return {
-            "service": service_name,
-            "status": "healthy",
-            "timestamp": utcnow(),
-            "details": details or {},
-        }
+        if (
+            metrics.cpu_usage >= 80
+            or metrics.memory_usage >= 80
+            or metrics.error_rate >= 2
+            or metrics.latency_ms >= 250
+        ):
+            return "WARNING"
+
+        return "HEALTHY"

@@ -1,6 +1,6 @@
 from time import sleep
 
-from chaos_engine.telemetry import TelemetryGenerator
+from backend.chaos_engine.telemetry import TelemetryGenerator
 
 telemetry = TelemetryGenerator()
 
