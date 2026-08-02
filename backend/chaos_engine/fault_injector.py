@@ -1,32 +1,60 @@
-"""Fault injection primitives for the chaos engine."""
+"""
+Fault Injection Engine for Sentinel AI Ops.
+
+This module simulates realistic production failures by
+modifying service telemetry instead of directly creating
+incidents.
+"""
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from abc import ABC, abstractmethod
 
-from .metrics import MetricsCollector
-from .service_registry import ServiceRegistry
+from backend.chaos_engine.models import ServiceMetrics
 
 
-class FaultInjector:
-    """Inject faults into registered services and report them."""
+class Fault(ABC):
+    """
+    Base class for all simulated faults.
+    """
 
-    def __init__(self, service_registry: Optional[ServiceRegistry] = None, metrics: Optional[MetricsCollector] = None) -> None:
-        self.service_registry = service_registry or ServiceRegistry()
-        self.metrics = metrics or MetricsCollector()
+    name: str = "Generic Fault"
 
-    def inject(self, service_name: str, fault_type: str) -> Dict[str, Any]:
-        if not self.service_registry.get_service(service_name):
-            raise KeyError(f"Unknown service: {service_name}")
+    @abstractmethod
+    def apply(self, metrics: ServiceMetrics) -> None:
+        """
+        Apply this fault to the provided metrics.
+        """
+        pass
 
-        self.metrics.increment("faults_injected")
-        self.metrics.record_event(
-            "fault_injected", {"service": service_name, "fault_type": fault_type})
-        return {"service": service_name, "fault_type": fault_type, "status": "injected"}
 
-    def inject_many(self, fault_types: List[str]) -> List[Dict[str, Any]]:
-        results: List[Dict[str, Any]] = []
-        for service_name in self.service_registry.list_services():
-            for fault_type in fault_types:
-                results.append(self.inject(service_name, fault_type))
-        return results
+class CPUSpikeFault(Fault):
+    """
+    Simulates a sudden CPU spike.
+    """
+
+    name = "CPU Spike"
+
+    def apply(self, metrics: ServiceMetrics) -> None:
+
+        metrics.cpu_usage = min(metrics.cpu_usage + 25, 100)
+
+        metrics.latency_ms += 40
+
+        metrics.error_rate += 0.4
+
+
+class MemoryLeakFault(Fault):
+    """
+    Simulates a gradual memory leak.
+    """
+
+    name = "Memory Leak"
+
+    def apply(self, metrics: ServiceMetrics) -> None:
+
+        metrics.memory_usage = min(metrics.memory_usage + 12, 100)
+
+        metrics.latency_ms += 15
+
+        metrics.error_rate += 0.1
