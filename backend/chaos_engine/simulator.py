@@ -1,56 +1,80 @@
-"""High-level orchestration for the chaos simulator."""
+"""
+Digital Infrastructure Simulator.
+
+This module ties together the telemetry generator,
+fault injector, and health engine.
+"""
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+import random
+import time
 
-from .fault_injector import FaultInjector
-from .incident_service import IncidentService
-from .metrics import MetricsCollector
-from .scheduler import Scheduler
-from .service_registry import ServiceRegistry
-from .utils import utcnow
+from backend.chaos_engine.telemetry import TelemetryGenerator
+from backend.chaos_engine.health import HealthEngine
+from backend.chaos_engine.fault_injector import (
+    CPUSpikeFault,
+    MemoryLeakFault,
+)
 
 
-class ChaosSimulator:
-    """Coordinate scheduling, fault injection, and incident tracking."""
+SERVICES = [
+    "Authentication Service",
+    "Payment Service",
+    "Inventory Service",
+]
 
-    def __init__(
-        self,
-        service_registry: Optional[ServiceRegistry] = None,
-        metrics: Optional[MetricsCollector] = None,
-        incident_service: Optional[IncidentService] = None,
-    ) -> None:
-        self.service_registry = service_registry or ServiceRegistry()
-        self.metrics = metrics or MetricsCollector()
-        self.incident_service = incident_service or IncidentService(
-            self.metrics)
-        self.scheduler = Scheduler()
-        self.fault_injector = FaultInjector(
-            self.service_registry, self.metrics)
 
-    def run(self, duration_seconds: int = 60) -> Dict[str, Any]:
-        """Run a short simulation cycle and collect summary data."""
-        self.metrics.record_event("simulator_started", {
-                                  "started_at": utcnow(), "duration_seconds": duration_seconds})
+class Simulator:
 
-        for service_name in self.service_registry.list_services():
-            self.service_registry.heartbeat(service_name)
+    def __init__(self):
 
-        self.scheduler.add_task("inject_faults", lambda: self.fault_injector.inject_many(
-            ["latency", "resource_pressure"]), 5)
-        self.scheduler.run(iterations=1)
+        self.health_engine = HealthEngine()
 
-        incident = self.incident_service.create_incident(
-            title="Chaos simulation completed",
-            severity="medium",
-            details={"duration_seconds": duration_seconds,
-                     "timestamp": utcnow()},
-        )
-
-        return {
-            "incident_id": incident["id"],
-            "services": self.service_registry.list_services(),
-            "metrics": self.metrics.snapshot(),
-            "completed_at": utcnow(),
+        self.services = {
+            service: TelemetryGenerator()
+            for service in SERVICES
         }
+
+    def run(self, cycles: int = 20):
+
+        for cycle in range(1, cycles + 1):
+
+            print("=" * 70)
+            print(f"Cycle {cycle}")
+
+            for service, telemetry in self.services.items():
+
+                metrics = telemetry.update()
+
+                if random.random() < 0.10:
+
+                    fault = random.choice(
+                        [
+                            CPUSpikeFault(),
+                            MemoryLeakFault(),
+                        ]
+                    )
+
+                    print(f"\n⚠ Injecting {fault.name} into {service}")
+
+                    fault.apply(metrics)
+
+                health = self.health_engine.evaluate(metrics)
+
+                print(f"\n{service}")
+
+                print(f"CPU        : {metrics.cpu_usage:.1f}%")
+                print(f"Memory     : {metrics.memory_usage:.1f}%")
+                print(f"Latency    : {metrics.latency_ms} ms")
+                print(f"Errors     : {metrics.error_rate:.2f}%")
+                print(f"Health     : {health}")
+
+            time.sleep(1)
+
+
+if __name__ == "__main__":
+
+    simulator = Simulator()
+
+    simulator.run()

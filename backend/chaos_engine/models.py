@@ -1,49 +1,51 @@
 """
-Domain models used by the Chaos Engine.
-
-These classes represent the state of our simulated
-production infrastructure.
-
-Nothing in this file should contain business logic.
+Core data models for Sentinel AI Ops.
 """
+
+from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
 
 
-@dataclass(slots=True)
-class ServiceMetrics:
-    """
-    Represents the current telemetry of one service.
-    """
+# ==========================================================
+# Service Metrics
+# ==========================================================
 
+@dataclass
+class ServiceMetrics:
     cpu_usage: float
     memory_usage: float
     disk_usage: float
-
     latency_ms: int
-
     requests_per_second: int
-
     error_rate: float
-
     active_connections: int
-
     updated_at: datetime = field(default_factory=datetime.utcnow)
 
 
-@dataclass(slots=True)
-class ServiceState:
+# ==========================================================
+# Incident Model
+# ==========================================================
+
+@dataclass
+class Incident:
     """
-    Represents one simulated microservice.
+    Represents an operational incident.
     """
 
-    name: str
+    incident_id: str
 
-    owner: str
+    service_name: str
 
-    criticality: str
+    severity: str
 
-    metrics: ServiceMetrics
+    status: str = "OPEN"
 
-    health_status: str = "HEALTHY"
+    description: str = ""
+
+    root_cause: str | None = None
+
+    remediation: str | None = None
+
+    created_at: datetime = field(default_factory=datetime.utcnow)
