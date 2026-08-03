@@ -1,9 +1,11 @@
 # Sentinel AI Ops
 
-A multi-agent system that detects, diagnoses, and helps resolve production
-incidents in a simulated microservices environment — with full transparency
-into every agent's reasoning and a tunable human-approval boundary for risky
-actions.
+
+
+Enterprise Agentic AI Platform
+for Autonomous Infrastructure Monitoring,
+Incident Detection, Root Cause Analysis,
+and Intelligent Remediation
 
 ## Why this project is different
 
