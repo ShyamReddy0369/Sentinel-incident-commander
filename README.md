@@ -1,4 +1,4 @@
-# Sentinel — Autonomous Incident Commander
+# Sentinel AI Ops
 
 A multi-agent system that detects, diagnoses, and helps resolve production
 incidents in a simulated microservices environment — with full transparency
