@@ -1,33 +1,46 @@
-"""Incident tracking helpers for the chaos engine."""
+"""
+Incident Detection and Management Engine.
+"""
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
-
-from .metrics import MetricsCollector
-from .utils import utcnow
+from backend.chaos_engine.models import Incident
 
 
 class IncidentService:
-    """Store and update incident records in memory."""
+    """
+    Creates and manages incidents detected
+    by the Health Engine.
+    """
 
-    def __init__(self, metrics: MetricsCollector | None = None) -> None:
-        self._incidents: List[Dict[str, Any]] = []
-        self.metrics = metrics or MetricsCollector()
+    def __init__(self):
 
-    def create_incident(self, title: str, severity: str, details: Dict[str, Any] | None = None) -> Dict[str, Any]:
-        incident = {
-            "id": len(self._incidents) + 1,
-            "title": title,
-            "severity": severity,
-            "details": details or {},
-            "created_at": utcnow(),
-        }
-        self._incidents.append(incident)
-        self.metrics.increment("incidents_created")
-        self.metrics.record_event(
-            "incident_created", {"id": incident["id"], "title": title})
+        self._next_id = 1
+
+        self.active_incidents = []
+
+    def create_incident(
+        self,
+        service_name: str,
+        severity: str,
+        description: str,
+    ) -> Incident:
+
+        incident = Incident(
+            incident_id=self._generate_id(),
+            service_name=service_name,
+            severity=severity,
+            description=description,
+        )
+
+        self.active_incidents.append(incident)
+
         return incident
 
-    def list_incidents(self) -> List[Dict[str, Any]]:
-        return list(self._incidents)
+    def _generate_id(self) -> str:
+
+        incident_id = f"INC-{self._next_id:06d}"
+
+        self._next_id += 1
+
+        return incident_id
