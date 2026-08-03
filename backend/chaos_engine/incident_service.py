@@ -1,30 +1,20 @@
 """
-Incident Detection and Management Engine.
+Incident Detection and Lifecycle Manager.
 """
-
-from __future__ import annotations
 
 from backend.chaos_engine.models import Incident
 
 
 class IncidentService:
-    """
-    Creates and manages incidents detected
-    by the Health Engine.
-    """
 
     def __init__(self):
-
         self._next_id = 1
+        self.active_incidents = {}
 
-        self.active_incidents = []
+    def create_incident(self, service_name, severity, description):
 
-    def create_incident(
-        self,
-        service_name: str,
-        severity: str,
-        description: str,
-    ) -> Incident:
+        if service_name in self.active_incidents:
+            return None
 
         incident = Incident(
             incident_id=self._generate_id(),
@@ -33,14 +23,24 @@ class IncidentService:
             description=description,
         )
 
-        self.active_incidents.append(incident)
+        self.active_incidents[service_name] = incident
 
         return incident
 
-    def _generate_id(self) -> str:
+    def resolve_incident(self, service_name):
+
+        if service_name not in self.active_incidents:
+            return None
+
+        incident = self.active_incidents[service_name]
+        incident.status = "RESOLVED"
+
+        del self.active_incidents[service_name]
+
+        return incident
+
+    def _generate_id(self):
 
         incident_id = f"INC-{self._next_id:06d}"
-
         self._next_id += 1
-
         return incident_id
