@@ -11,7 +11,9 @@ import random
 import time
 
 from backend.chaos_engine.telemetry import TelemetryGenerator
+
 from backend.chaos_engine.health import HealthEngine
+from backend.chaos_engine.incident_service import IncidentService
 from backend.chaos_engine.fault_injector import (
     CPUSpikeFault,
     MemoryLeakFault,
@@ -30,6 +32,7 @@ class Simulator:
     def __init__(self):
 
         self.health_engine = HealthEngine()
+        self.incident_service = IncidentService()
 
         self.services = {
             service: TelemetryGenerator()
@@ -63,18 +66,54 @@ class Simulator:
                 health = self.health_engine.evaluate(metrics)
 
                 print(f"\n{service}")
-
                 print(f"CPU        : {metrics.cpu_usage:.1f}%")
                 print(f"Memory     : {metrics.memory_usage:.1f}%")
                 print(f"Latency    : {metrics.latency_ms} ms")
                 print(f"Errors     : {metrics.error_rate:.2f}%")
                 print(f"Health     : {health}")
 
+                # Create incident
+                if health in ("WARNING", "CRITICAL"):
+
+                    incident = self.incident_service.create_incident(
+                        service_name=service,
+                        severity=health,
+                        description=f"{service} entered {health} state."
+                    )
+
+                    if incident:
+                        print("\n🚨 INCIDENT CREATED")
+                        print(f"ID       : {incident.incident_id}")
+                        print(f"Status   : {incident.status}")
+
+                # Resolve incident
+                elif health == "HEALTHY":
+
+                    incident = self.incident_service.resolve_incident(service)
+
+                    if incident:
+                        print(
+                            f"\n✅ INCIDENT RESOLVED : {incident.incident_id}")
+
+            # End of the inner 'for service' loop
+
+            print("\n" + "=" * 70)
+            print("ACTIVE INCIDENTS")
+
+            if not self.incident_service.active_incidents:
+                print("None")
+            else:
+                for incident in self.incident_service.active_incidents.values():
+                    print(
+                        f"{incident.incident_id} | "
+                        f"{incident.service_name} | "
+                        f"{incident.severity} | "
+                        f"{incident.status}"
+                    )
+
             time.sleep(1)
 
 
 if __name__ == "__main__":
-
     simulator = Simulator()
-
     simulator.run()
