@@ -2,7 +2,8 @@
 Digital Infrastructure Simulator.
 
 This module ties together the telemetry generator,
-fault injector, and health engine.
+fault injector, health engine, incident service,
+and AI agent orchestrator.
 """
 
 from __future__ import annotations
@@ -10,14 +11,14 @@ from __future__ import annotations
 import random
 import time
 
-from backend.chaos_engine.telemetry import TelemetryGenerator
-
-from backend.chaos_engine.health import HealthEngine
-from backend.chaos_engine.incident_service import IncidentService
+from backend.agents.orchestrator import AgentOrchestrator
 from backend.chaos_engine.fault_injector import (
     CPUSpikeFault,
     MemoryLeakFault,
 )
+from backend.chaos_engine.health import HealthEngine
+from backend.chaos_engine.incident_service import IncidentService
+from backend.chaos_engine.telemetry import TelemetryGenerator
 
 
 SERVICES = [
@@ -33,6 +34,7 @@ class Simulator:
 
         self.health_engine = HealthEngine()
         self.incident_service = IncidentService()
+        self.orchestrator = AgentOrchestrator()
 
         self.services = {
             service: TelemetryGenerator()
@@ -72,38 +74,104 @@ class Simulator:
                 print(f"Errors     : {metrics.error_rate:.2f}%")
                 print(f"Health     : {health}")
 
-                # Create incident
+                # -------------------------
+                # Incident Creation
+                # -------------------------
+
                 if health in ("WARNING", "CRITICAL"):
+
+                    if metrics.cpu_usage >= 60:
+                        description = (
+                            f"CPU utilization exceeded threshold ({metrics.cpu_usage:.1f}%)."
+                        )
+
+                    elif metrics.memory_usage >= 60:
+                        description = f"Memory utilization exceeded threshold ({metrics.memory_usage:.1f}%)."
+
+                    elif metrics.latency_ms >= 120:
+                        description = f"Latency exceeded threshold ({metrics.latency_ms} ms)."
+
+                    elif metrics.error_rate >= 1:
+                        description = f"Error rate exceeded threshold ({metrics.error_rate:.2f}%)."
+
+                    else:
+                        description = f"{service} entered {health} state."
 
                     incident = self.incident_service.create_incident(
                         service_name=service,
                         severity=health,
-                        description=f"{service} entered {health} state."
+                        description=description,
                     )
 
                     if incident:
+
                         print("\n🚨 INCIDENT CREATED")
                         print(f"ID       : {incident.incident_id}")
                         print(f"Status   : {incident.status}")
 
-                # Resolve incident
-                elif health == "HEALTHY":
+                        report = self.orchestrator.process_incident(
+                            incident
+                        )
 
-                    incident = self.incident_service.resolve_incident(service)
+                        print("\n================ AI ANALYSIS ================")
+
+                        diagnosis = report["diagnosis"]
+
+                        print("\nROOT CAUSE")
+                        print("-" * 50)
+                        print(diagnosis["root_cause"])
+
+                        print("\nCONFIDENCE")
+                        print("-" * 50)
+                        print(f'{diagnosis["confidence"]}%')
+
+                        print("\nEXECUTION PLAN")
+                        print("-" * 50)
+
+                        for i, step in enumerate(
+                            report["plan"]["steps"],
+                            start=1,
+                        ):
+                            print(f"{i}. {step}")
+
+                        print("\nREMEDIATION")
+                        print("-" * 50)
+
+                        for action in report["remediation"]["completed_actions"]:
+                            print(f"✔ {action['action']}")
+
+                        print("\nSUMMARY")
+                        print("-" * 50)
+                        print(report["remediation"]["summary"])
+
+                # -------------------------
+                # Incident Resolution
+                # -------------------------
+
+                else:
+
+                    incident = self.incident_service.resolve_incident(
+                        service
+                    )
 
                     if incident:
-                        print(
-                            f"\n✅ INCIDENT RESOLVED : {incident.incident_id}")
 
-            # End of the inner 'for service' loop
+                        print(
+                            f"\n✅ INCIDENT RESOLVED : "
+                            f"{incident.incident_id}"
+                        )
 
             print("\n" + "=" * 70)
             print("ACTIVE INCIDENTS")
 
             if not self.incident_service.active_incidents:
+
                 print("None")
+
             else:
+
                 for incident in self.incident_service.active_incidents.values():
+
                     print(
                         f"{incident.incident_id} | "
                         f"{incident.service_name} | "
@@ -115,5 +183,5 @@ class Simulator:
 
 
 if __name__ == "__main__":
-    simulator = Simulator()
-    simulator.run()
+
+    Simulator().run()

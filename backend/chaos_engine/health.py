@@ -8,43 +8,42 @@ from backend.chaos_engine.models import ServiceMetrics
 class HealthEngine:
 
     def evaluate(self, metrics: ServiceMetrics) -> str:
+        """
+        Evaluates the health of a service based on
+        CPU, memory, latency, and error rate.
 
-        score = self.health_score(metrics)
+        NOTE:
+        These thresholds are intentionally lowered
+        for development/demo purposes so incidents
+        occur frequently enough to test the AI pipeline.
+        """
 
-        if score >= 70:
+        # ------------------------
+        # CRITICAL
+        # ------------------------
+
+        if (
+            metrics.cpu_usage >= 90
+            or metrics.memory_usage >= 90
+            or metrics.error_rate >= 5
+            or metrics.latency_ms >= 500
+        ):
             return "CRITICAL"
 
-        if score >= 40:
+        # ------------------------
+        # WARNING
+        # ------------------------
+
+        if (
+            metrics.cpu_usage >= 60
+            or metrics.memory_usage >= 60
+            or metrics.error_rate >= 1
+            or metrics.latency_ms >= 120
+        ):
             return "WARNING"
 
+        # ------------------------
+        # HEALTHY
+        # ------------------------
+
         return "HEALTHY"
-
-    def health_score(self, metrics: ServiceMetrics) -> int:
-
-        score = 0
-
-        # CPU
-        if metrics.cpu_usage >= 90:
-            score += 30
-        elif metrics.cpu_usage >= 75:
-            score += 15
-
-        # Memory
-        if metrics.memory_usage >= 90:
-            score += 25
-        elif metrics.memory_usage >= 75:
-            score += 12
-
-        # Latency
-        if metrics.latency_ms >= 400:
-            score += 20
-        elif metrics.latency_ms >= 200:
-            score += 10
-
-        # Error Rate
-        if metrics.error_rate >= 2:
-            score += 25
-        elif metrics.error_rate >= 1:
-            score += 12
-
-        return score

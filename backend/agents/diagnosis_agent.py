@@ -1,19 +1,26 @@
 """
 Diagnosis Agent for Sentinel AI Ops.
 
-This agent analyzes incidents and produces
-a probable root cause with a confidence score
-and recommended next action.
+Analyzes incidents and produces a diagnosis
+containing the probable root cause,
+confidence score, and recommendation.
 """
 
+from backend.agents.base_agent import BaseAgent
 from backend.chaos_engine.models import Incident
 
 
-class DiagnosisAgent:
+class DiagnosisAgent(BaseAgent):
 
-    def analyze(self, incident: Incident):
+    def __init__(self):
 
-        diagnosis = {
+        super().__init__("Diagnosis Agent")
+
+    def run(self, incident: Incident):
+
+        return {
+            "agent": self.name,
+            "status": "SUCCESS",
             "incident_id": incident.incident_id,
             "service_name": incident.service_name,
             "severity": incident.severity,
@@ -21,8 +28,6 @@ class DiagnosisAgent:
             "confidence": self._confidence(incident),
             "recommendation": self._recommendation(incident),
         }
-
-        return diagnosis
 
     def _root_cause(self, incident: Incident):
 
@@ -67,8 +72,7 @@ class DiagnosisAgent:
 
         if "latency" in text:
             return (
-                "Check upstream dependencies and network "
-                "performance."
+                "Check upstream dependencies and network performance."
             )
 
         return (
